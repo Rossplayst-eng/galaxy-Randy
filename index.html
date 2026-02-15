@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Randy ❤️</title>
 
-  <!-- Fuente “gordita y linda” -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&display=swap" rel="stylesheet">
@@ -14,7 +13,6 @@
     html, body { height:100%; margin:0; background:#000; overflow:hidden; }
     body { font-family: "Baloo 2", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
 
-    /* 9:16 centrado */
     .frame{ position:fixed; inset:0; display:grid; place-items:center; background:#000; }
     .stage{
       width:min(100vw, calc(100vh * 9/16));
@@ -35,26 +33,10 @@
       color:#ff7ad9;
       white-space:nowrap;
       user-select:none;
-      text-shadow:
-        0 0 12px rgba(255,122,217,.85),
-        0 0 34px rgba(255,122,217,.45);
+      text-shadow: 0 0 12px rgba(255,122,217,.85), 0 0 34px rgba(255,122,217,.45);
       display:flex; align-items:center; gap:10px;
     }
     .title .heart{ filter: drop-shadow(0 0 14px rgba(255, 80, 140, .9)); }
-
-    .hint{
-      position:absolute; bottom:12px; left:50%;
-      transform:translateX(-50%);
-      z-index:6;
-      color:rgba(255,255,255,.7);
-      font-size:12px;
-      padding:8px 10px;
-      border-radius:12px;
-      border:1px solid rgba(255,122,217,.18);
-      background:rgba(0,0,0,.25);
-      backdrop-filter: blur(8px);
-      user-select:none;
-    }
   </style>
 </head>
 
@@ -63,7 +45,6 @@
     <div class="stage" id="stage">
       <canvas id="c"></canvas>
       <div class="title">Randy <span class="heart">❤️</span></div>
-      <div class="hint">Toca para más brillo ✨</div>
     </div>
   </div>
 
@@ -88,23 +69,23 @@
   addEventListener("resize", resize);
   resize();
 
-  // ====== Config (edita aquí si quieres) ======
+  // ====== CONFIG ======
   const texts = ["Te amo","Mi desastre fav","Mi todo","Mi mundo","Mi universo"];
-  const STICKER_PATH = "sticker.png"; // <-- cambia si tu sticker tiene otro nombre
-  const ORBIT_SPEED = 0.18;           // velocidad del anillo (más bajo = más lento)
-  const STAR_SWIRL_SPEED = 0.06;      // estrellas girando suave
-  const BG_STAR_COUNT = 380;          // fondo suave (no tan cargado)
-  const RING_STAR_COUNT = 130;        // destellos cerca del anillo
-  const STICKER_COUNT = 10;           // cuántos stickers dan la vuelta
+  const STICKER_PATH = "sticker.png";     // tu png (si no, usa fallback emoji)
+  const ORBIT_SPEED = 0.06;               // <<< MÁS DESPACIO
+  const BG_STAR_COUNT = 320;              // fondo suave
+  const RING_SPARKLES = 320;              // <<< MUCHAS estrellas en el anillo
+  const WORD_COUNT = 22;                  // más palabras alrededor
+  const STICKER_COUNT = 14;               // más stickers alrededor
 
-  // ====== Cargar sticker ======
+  // ====== sticker ======
   const stickerImg = new Image();
   let stickerReady = false;
   stickerImg.onload = () => stickerReady = true;
   stickerImg.onerror = () => stickerReady = false;
   stickerImg.src = STICKER_PATH;
 
-  // ====== Estrellas fondo (suaves) ======
+  // ====== estrellas de fondo (pocas y suaves) ======
   const bgStars = [];
   function makeBgStars(){
     bgStars.length = 0;
@@ -113,48 +94,48 @@
         x: rand(0, W()),
         y: rand(0, H()),
         z: rand(0.2, 1),
-        s: rand(0.5, 1.4),
+        s: rand(0.6, 1.4),
         tw: rand(0, Math.PI*2)
       });
     }
   }
   makeBgStars();
 
-  // ====== Destellos alrededor del anillo (como glitter) ======
-  const ringStars = [];
-  function makeRingStars(){
-    ringStars.length = 0;
-    for(let i=0;i<RING_STAR_COUNT;i++){
-      ringStars.push({
+  // ====== chispitas que giran en el anillo ======
+  const sparkles = [];
+  function makeSparkles(){
+    sparkles.length = 0;
+    for(let i=0;i<RING_SPARKLES;i++){
+      sparkles.push({
         a: rand(0, Math.PI*2),
-        r: rand(0.55, 1.25),
-        s: rand(0.8, 1.6),
-        tw: rand(0, Math.PI*2)
+        lane: rand(0.92, 1.08),     // cerca del anillo
+        tw: rand(0, Math.PI*2),
+        s: rand(0.8, 1.8),
+        speed: rand(0.75, 1.35)     // variación
       });
     }
   }
-  makeRingStars();
+  makeSparkles();
 
-  // ====== Saturno (abajo como “piso”) ======
+  // ====== Saturno ======
   function drawSaturn(t){
     const cx = W()/2;
-    const cy = H()*0.76;           // abajo
+    const cy = H()*0.76;
     const planetR = Math.min(W(),H()) * 0.16;
 
-    // sombreado del “piso” (haze)
+    // bruma
     const haze = ctx.createRadialGradient(cx, cy, 1, cx, cy, planetR*3.0);
     haze.addColorStop(0, "rgba(255,110,210,0.10)");
     haze.addColorStop(1, "rgba(0,0,0,0)");
     ctx.fillStyle = haze;
     ctx.fillRect(0,0,W(),H());
 
-    // anillo grande de Saturno
+    // anillo blanco (elipse)
     const ringTilt = 0.55 + Math.sin(t*0.8)*0.02;
+
+    // ring glow
     ctx.save();
     ctx.translate(cx, cy);
-    ctx.rotate(Math.sin(t*0.15)*0.02);
-
-    // ring glow (elipse)
     for(let i=0;i<5;i++){
       ctx.beginPath();
       ctx.ellipse(0, 0, planetR*2.05 + i*6, planetR*0.95*ringTilt + i*2, 0, 0, Math.PI*2);
@@ -165,16 +146,19 @@
       ctx.stroke();
     }
 
-    // ring highlight
+    // ring highlight (blanco)
     ctx.beginPath();
     ctx.ellipse(0, 0, planetR*2.0, planetR*0.92*ringTilt, 0, 0, Math.PI*2);
-    ctx.strokeStyle = "rgba(255, 230, 255, 0.90)";
+    ctx.strokeStyle = "rgba(255, 235, 255, 0.92)";
     ctx.lineWidth = 4;
     ctx.shadowBlur = 26;
     ctx.shadowColor = "rgba(255, 130, 220, 1)";
     ctx.stroke();
+    ctx.restore();
 
-    // planeta (bola)
+    // planeta
+    ctx.save();
+    ctx.translate(cx, cy);
     const grad = ctx.createRadialGradient(-planetR*0.35, -planetR*0.35, planetR*0.2, 0, 0, planetR*1.2);
     grad.addColorStop(0, "rgba(255, 205, 245, 0.95)");
     grad.addColorStop(0.6, "rgba(255, 125, 215, 0.85)");
@@ -186,37 +170,29 @@
     ctx.arc(0, 0, planetR, 0, Math.PI*2);
     ctx.fill();
 
-    // sombra inferior del planeta
     ctx.globalAlpha = 0.35;
     ctx.fillStyle = "rgba(0,0,0,0.65)";
     ctx.beginPath();
     ctx.ellipse(planetR*0.15, planetR*0.35, planetR*0.95, planetR*0.65, 0, 0, Math.PI*2);
     ctx.fill();
     ctx.globalAlpha = 1;
-
     ctx.restore();
 
-    return { cx, cy, planetR };
+    return { cx, cy, planetR, ringTilt };
   }
 
-  // ====== Texto “gordito relleno” ======
   function drawNeonText(str, x, y, size, alpha=1){
     ctx.save();
     ctx.globalAlpha = alpha;
-
     ctx.font = `${size}px "Baloo 2", system-ui`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
-    // glow
     ctx.shadowBlur = 20;
     ctx.shadowColor = "rgba(255, 90, 200, 0.95)";
-
-    // relleno
     ctx.fillStyle = "rgba(255, 160, 235, 0.98)";
     ctx.fillText(str, x, y);
 
-    // borde blanco rosita
     ctx.lineWidth = Math.max(2, size*0.08);
     ctx.strokeStyle = "rgba(255, 235, 255, 0.92)";
     ctx.strokeText(str, x, y);
@@ -224,91 +200,71 @@
     ctx.restore();
   }
 
-  // ====== Dibujar estrellas fondo (suaves y girando) ======
   function drawBgStars(t){
-    const cx = W()/2, cy = H()*0.62;
+    const cx = W()/2, cy = H()*0.55;
     for(const s of bgStars){
       s.tw += 0.02*(0.4+s.z);
       const tw = 0.55 + 0.45*Math.sin(s.tw);
-
-      // rotación suave del “cielo”
-      const ang = Math.atan2(s.y - cy, s.x - cx) + STAR_SWIRL_SPEED * t * (0.18 + s.z*0.35);
-      const dist = Math.hypot(s.x - cx, s.y - cy);
-      const x = cx + Math.cos(ang)*dist;
-      const y = cy + Math.sin(ang)*dist;
-
-      ctx.globalAlpha = tw * (0.18 + 0.40*s.z); // suave, no muy cargado
+      ctx.globalAlpha = tw * (0.10 + 0.35*s.z);
       ctx.fillStyle = "white";
-      ctx.fillRect(x, y, s.s, s.s);
+      ctx.fillRect(s.x, s.y, s.s, s.s);
     }
     ctx.globalAlpha = 1;
   }
 
-  // ====== Anillo de palabras + stickers (girando lento) ======
-  function drawOrbit(t, sat){
+  // >>> AQUI: letras + estrellas girando SOBRE el anillo blanco (elipse)
+  function drawRingOrbit(t, sat){
     const cx = sat.cx;
-    const cy = sat.cy - sat.planetR*1.05;   // anillo “arriba” del piso
-    const ringR = sat.planetR*2.35;
+    const cy = sat.cy;
 
-    // dibuja “camino” del anillo (como piso circular)
-    for(let i=0;i<5;i++){
-      ctx.beginPath();
-      ctx.arc(cx, cy, ringR + i*4, 0, Math.PI*2);
-      ctx.strokeStyle = `rgba(255, 80, 200, ${0.10 - i*0.015})`;
-      ctx.lineWidth = 10 + i*2;
-      ctx.shadowBlur = 26 + i*8;
-      ctx.shadowColor = "rgba(255, 90, 210, 0.9)";
-      ctx.stroke();
-    }
+    const rx = sat.planetR*2.0;                 // elipse X (igual ring highlight)
+    const ry = sat.planetR*0.92*sat.ringTilt;   // elipse Y
 
-    // destellos cerca del anillo
-    for(const rs of ringStars){
-      rs.tw += 0.03;
-      const sparkle = 0.55 + 0.45*Math.sin(rs.tw);
-      const a = rs.a + t*ORBIT_SPEED*0.35;
-      const r = ringR * rs.r;
-      const x = cx + Math.cos(a)*r;
-      const y = cy + Math.sin(a)*r;
-      ctx.globalAlpha = sparkle * 0.22;
+    // 1) Sparkles girando (muchos)
+    for(const sp of sparkles){
+      sp.tw += 0.05;
+      const sparkle = 0.45 + 0.55*Math.sin(sp.tw);
+      const a = sp.a + t*ORBIT_SPEED*sp.speed;
+
+      const x = cx + Math.cos(a) * (rx * sp.lane);
+      const y = cy + Math.sin(a) * (ry * sp.lane);
+
+      ctx.globalAlpha = sparkle * 0.35;
       ctx.fillStyle = "white";
-      ctx.fillRect(x, y, rs.s, rs.s);
+      ctx.fillRect(x, y, sp.s, sp.s);
     }
     ctx.globalAlpha = 1;
 
-    // palabras en círculo
-    const totalWords = 18;
-    for(let i=0;i<totalWords;i++){
-      const a = (i/totalWords)*Math.PI*2 + t*ORBIT_SPEED;
-      const x = cx + Math.cos(a)*ringR;
-      const y = cy + Math.sin(a)*ringR;
+    // 2) Palabras girando en el mismo anillo
+    for(let i=0;i<WORD_COUNT;i++){
+      const a = (i/WORD_COUNT)*Math.PI*2 + t*ORBIT_SPEED;
 
-      // sensación de profundidad: arriba más pequeño / abajo más grande
-      const depth = 0.70 + 0.35*(0.5 + 0.5*Math.sin(a));
-      const size = Math.round((Math.min(W(),H())*0.035) * depth);
+      const x = cx + Math.cos(a) * (rx * 1.08);
+      const y = cy + Math.sin(a) * (ry * 1.08);
 
-      const wob = Math.sin(t*2 + i)*1.2;
-      drawNeonText(pick(texts), x, y + wob, size, 0.92);
+      // profundidad: arriba más pequeño, abajo más grande
+      const depth = 0.72 + 0.38*(0.5 + 0.5*Math.sin(a));
+      const size = Math.round((Math.min(W(),H())*0.034) * depth);
+
+      drawNeonText(pick(texts), x, y, size, 0.95);
     }
 
-    // stickers repetidos girando también
+    // 3) Stickers girando junto con las palabras
     for(let i=0;i<STICKER_COUNT;i++){
-      const a = (i/STICKER_COUNT)*Math.PI*2 - t*ORBIT_SPEED*0.9; // opposite direction = más bonito
-      const r = ringR * rand(0.82, 1.08);
-      const x = cx + Math.cos(a)*r;
-      const y = cy + Math.sin(a)*r;
-
+      const a = (i/STICKER_COUNT)*Math.PI*2 - t*ORBIT_SPEED*0.9; // dirección contraria
       const depth = 0.75 + 0.35*(0.5 + 0.5*Math.sin(a));
-      const s = Math.round((Math.min(W(),H())*0.08) * depth);
+      const s = Math.round((Math.min(W(),H())*0.075) * depth);
+
+      const x = cx + Math.cos(a) * (rx * 0.92);
+      const y = cy + Math.sin(a) * (ry * 0.92);
 
       ctx.save();
       ctx.globalAlpha = 0.95;
-      ctx.shadowBlur = 20;
+      ctx.shadowBlur = 18;
       ctx.shadowColor = "rgba(255, 90, 200, 0.75)";
-
       if(stickerReady){
         ctx.drawImage(stickerImg, x - s/2, y - s/2, s, s);
       } else {
-        // fallback por si no carga el png
         ctx.font = `${Math.max(22, s*0.45)}px Apple Color Emoji, Segoe UI Emoji`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
@@ -318,72 +274,21 @@
     }
   }
 
-  // ====== Toques para “brillos” ======
-  const tapBursts = [];
-  function burst(x,y){
-    for(let i=0;i<18;i++){
-      tapBursts.push({
-        x, y,
-        vx: rand(-1.2, 1.2),
-        vy: rand(-1.6, -0.4),
-        life: rand(0.8, 1.4),
-        t: 0,
-        s: rand(10, 20),
-        char: pick(["✨","💗","💞","💕","⭐️"])
-      });
-    }
-  }
-
-  stage.addEventListener("pointerdown", (e)=>{
-    const r = stage.getBoundingClientRect();
-    burst(e.clientX - r.left, e.clientY - r.top);
-  });
-
-  function drawBursts(dt){
-    for(let i=tapBursts.length-1;i>=0;i--){
-      const p = tapBursts[i];
-      p.t += dt;
-      p.x += p.vx * 60 * dt;
-      p.y += p.vy * 60 * dt;
-      p.vy += 0.02 * 60 * dt; // gravity
-      const a = Math.max(0, 1 - (p.t/p.life));
-      ctx.save();
-      ctx.globalAlpha = a;
-      ctx.font = `${p.s}px Apple Color Emoji, Segoe UI Emoji`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.shadowBlur = 18;
-      ctx.shadowColor = "rgba(255, 90, 200, 0.75)";
-      ctx.fillText(p.char, p.x, p.y);
-      ctx.restore();
-      if(p.t >= p.life) tapBursts.splice(i,1);
-    }
-  }
-
-  // ====== Loop ======
-  let last = performance.now();
+  // loop
   function tick(now){
-    const dt = Math.min(32, now-last)/1000;
-    last = now;
     const t = now/1000;
-
     ctx.fillStyle = "#000";
     ctx.fillRect(0,0,W(),H());
 
     drawBgStars(t);
-
     const sat = drawSaturn(t);
-
-    drawOrbit(t, sat);
-
-    drawBursts(dt);
+    drawRingOrbit(t, sat);
 
     requestAnimationFrame(tick);
   }
   requestAnimationFrame(tick);
 
-  // Rehacer estrellas si cambia tamaño
-  addEventListener("resize", ()=>{ makeBgStars(); makeRingStars(); });
+  addEventListener("resize", ()=>{ makeBgStars(); makeSparkles(); });
 
 })();
 </script>
