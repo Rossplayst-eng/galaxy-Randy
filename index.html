@@ -6,146 +6,186 @@
   <title>Galaxia Para Mi Amor</title>
   <style>
     :root{
-      --bg:#03040a;
-      --glow:#4cc9ff;
-      --glow2:#2aa8ff;
-      --ring:#7fe3ff;
+      --bg:#02030a;
+
+      /* Paleta más viva */
+      --blue:#35d5ff;
+      --cyan:#7ff0ff;
+      --violet:#8b5cff;
+      --pink:#ff4fd8;
+
       --text:#eaf7ff;
-      --muted:rgba(234,247,255,.72);
+      --glass: rgba(6, 10, 24, .35);
+      --glass2: rgba(10, 18, 40, .28);
+      --stroke: rgba(170, 245, 255, .35);
     }
 
     *{ box-sizing:border-box; }
-    html,body{ height:100%; margin:0; background:var(--bg); overflow:hidden; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; }
-    #stage{ position:fixed; inset:0; }
+    html,body{
+      height:100%;
+      margin:0;
+      background: var(--bg);
+      overflow:hidden;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    }
 
-    /* Canvas fondo */
+    #stage{ position:fixed; inset:0; }
     canvas{ position:absolute; inset:0; width:100%; height:100%; }
 
-    /* Capa de universo */
     .universe{
       position:absolute; inset:0;
       display:grid; place-items:center;
       pointer-events:none;
     }
 
-    /* Saturno neón */
+    /* Saturno pro (más neón + color) */
     .saturn-wrap{
       position:absolute;
-      width:min(42vmin, 520px);
+      width:min(46vmin, 560px);
       aspect-ratio: 1/1;
       display:grid;
       place-items:center;
-      filter: drop-shadow(0 0 14px rgba(76,201,255,.35)) drop-shadow(0 0 40px rgba(42,168,255,.15));
+      filter:
+        drop-shadow(0 0 18px rgba(53,213,255,.42))
+        drop-shadow(0 0 55px rgba(139,92,255,.18))
+        drop-shadow(0 0 95px rgba(255,79,216,.08));
     }
 
     .planet{
       position:relative;
-      width:58%;
+      width:60%;
       aspect-ratio: 1/1;
       border-radius:50%;
       background:
-        radial-gradient(65% 65% at 35% 30%, rgba(255,255,255,.15), rgba(255,255,255,0) 55%),
-        radial-gradient(110% 110% at 30% 20%, rgba(76,201,255,.65), rgba(10,18,40,.95) 60%),
-        radial-gradient(120% 120% at 50% 65%, rgba(42,168,255,.45), rgba(0,0,0,0) 70%);
+        radial-gradient(70% 70% at 35% 28%, rgba(255,255,255,.22), rgba(255,255,255,0) 55%),
+        radial-gradient(120% 120% at 30% 25%, rgba(53,213,255,.85), rgba(8,14,34,.96) 62%),
+        radial-gradient(130% 130% at 55% 70%, rgba(139,92,255,.30), rgba(0,0,0,0) 70%);
       box-shadow:
-        inset 0 0 28px rgba(255,255,255,.06),
-        0 0 18px rgba(76,201,255,.25),
-        0 0 55px rgba(42,168,255,.18);
-      outline: 1px solid rgba(127,227,255,.18);
+        inset 0 0 30px rgba(255,255,255,.08),
+        0 0 22px rgba(53,213,255,.30),
+        0 0 70px rgba(139,92,255,.22),
+        0 0 120px rgba(255,79,216,.08);
+      outline: 1px solid rgba(127,240,255,.18);
+      animation: breathe 3.8s ease-in-out infinite;
+    }
+
+    @keyframes breathe{
+      0%,100%{ transform:scale(1); }
+      50%{ transform:scale(1.015); }
     }
 
     .planet::after{
       content:"";
-      position:absolute; inset:-14%;
+      position:absolute; inset:-16%;
       border-radius:50%;
-      background: radial-gradient(circle, rgba(76,201,255,.18), rgba(76,201,255,0) 62%);
+      background:
+        radial-gradient(circle, rgba(53,213,255,.22), rgba(53,213,255,0) 60%),
+        radial-gradient(circle, rgba(255,79,216,.10), rgba(255,79,216,0) 70%);
       filter: blur(2px);
       z-index:-1;
     }
 
-    /* Anillo */
+    /* Anillo más brillante + difuminado neón */
     .ring{
       position:absolute;
-      width:115%;
-      height:54%;
+      width:120%;
+      height:56%;
       border-radius:50%;
       transform: rotate(-18deg);
       background:
-        radial-gradient(70% 120% at 50% 50%, rgba(127,227,255,.55), rgba(127,227,255,0) 62%),
-        linear-gradient(90deg, rgba(127,227,255,0), rgba(127,227,255,.55), rgba(127,227,255,0));
-      filter: blur(.2px);
-      opacity:.95;
+        radial-gradient(70% 120% at 50% 50%, rgba(127,240,255,.60), rgba(127,240,255,0) 62%),
+        linear-gradient(90deg, rgba(127,240,255,0), rgba(127,240,255,.75), rgba(255,79,216,.18), rgba(127,240,255,0));
+      opacity:1;
       box-shadow:
-        0 0 18px rgba(127,227,255,.22),
-        0 0 40px rgba(76,201,255,.12);
-      outline: 1px solid rgba(127,227,255,.12);
+        0 0 22px rgba(127,240,255,.22),
+        0 0 55px rgba(53,213,255,.16),
+        0 0 95px rgba(139,92,255,.12);
+      outline: 1px solid rgba(127,240,255,.14);
+      filter: blur(.15px);
     }
 
-    /* Parte delantera y trasera del anillo (para sensación 3D) */
     .ring.back{
       mask: radial-gradient(80% 80% at 50% 50%, transparent 45%, #000 46%);
-      opacity:.55;
-      filter: blur(.4px);
+      opacity:.62;
+      filter: blur(.45px);
     }
     .ring.front{
       mask: radial-gradient(80% 80% at 50% 50%, #000 45%, transparent 46%);
-      opacity:.95;
+      opacity:1;
     }
 
-    /* Texto en la parte de abajo */
+    /* Capa frases */
+    .orbit-layer{
+      position:absolute;
+      width:min(92vmin, 1040px);
+      aspect-ratio:1/1;
+      pointer-events:none;
+    }
+
+    /* Frases: BORDE NEÓN + vida */
+    .phrase{
+      position:absolute;
+      left:50%;
+      top:50%;
+      transform:translate(-50%,-50%);
+      padding:10px 14px;
+      border-radius:999px;
+
+      background: linear-gradient(180deg, rgba(6,10,24,.45), rgba(6,10,24,.18));
+      border: 1px solid rgba(127,240,255,.20);
+
+      color: rgba(234,247,255,.96);
+      font-size:clamp(12px, 2.0vmin, 18px);
+      letter-spacing:.02em;
+      white-space:nowrap;
+
+      /* “borde neón” (glow fuerte) */
+      box-shadow:
+        0 0 0 1px rgba(127,240,255,.10) inset,
+        0 0 12px rgba(53,213,255,.18),
+        0 0 28px rgba(53,213,255,.14),
+        0 0 60px rgba(139,92,255,.12);
+
+      /* contorno para que destaque (tipo borde) */
+      -webkit-text-stroke: .55px rgba(127,240,255,.30);
+      text-shadow:
+        0 0 10px rgba(53,213,255,.45),
+        0 0 18px rgba(139,92,255,.22),
+        0 0 28px rgba(255,79,216,.12);
+
+      backdrop-filter: blur(10px);
+      opacity:.98;
+    }
+
     .caption{
       position:absolute;
       bottom:4.2vmin;
       left:50%;
       transform:translateX(-50%);
       text-align:center;
-      pointer-events:none;
       padding:10px 16px;
       border-radius:18px;
-      background: rgba(2,4,10,.18);
-      backdrop-filter: blur(6px);
-      border:1px solid rgba(127,227,255,.10);
-      box-shadow: 0 0 40px rgba(42,168,255,.08);
+      background: rgba(2,4,10,.22);
+      border:1px solid rgba(127,240,255,.12);
+      box-shadow:
+        0 0 24px rgba(53,213,255,.10),
+        0 0 70px rgba(139,92,255,.06);
+      backdrop-filter: blur(8px);
     }
     .caption h1{
       margin:0;
-      font-size:clamp(14px, 2.2vmin, 20px);
-      letter-spacing:.18em;
+      font-size:clamp(14px, 2.2vmin, 22px);
+      letter-spacing:.22em;
       text-transform:uppercase;
-      color:rgba(234,247,255,.92);
+      color:rgba(234,247,255,.95);
+      text-shadow:
+        0 0 14px rgba(53,213,255,.35),
+        0 0 30px rgba(139,92,255,.18);
     }
     .caption p{
       margin:8px 0 0 0;
       font-size:clamp(12px, 1.8vmin, 16px);
-      color:var(--muted);
-    }
-
-    /* Frases orbitando */
-    .orbit-layer{
-      position:absolute;
-      width:min(88vmin, 980px);
-      aspect-ratio:1/1;
-      display:block;
-      pointer-events:none;
-    }
-    .phrase{
-      position:absolute;
-      left:50%;
-      top:50%;
-      transform:translate(-50%,-50%);
-      padding:8px 12px;
-      border-radius:999px;
-      background: rgba(3,6,16,.28);
-      border:1px solid rgba(127,227,255,.10);
-      color:rgba(234,247,255,.92);
-      font-size:clamp(12px, 1.9vmin, 17px);
-      white-space:nowrap;
-      box-shadow:
-        0 0 22px rgba(76,201,255,.09),
-        inset 0 0 14px rgba(127,227,255,.06);
-      text-shadow: 0 0 10px rgba(76,201,255,.25);
-      backdrop-filter: blur(8px);
-      opacity:.95;
+      color:rgba(234,247,255,.78);
     }
 
     /* Sticker opcional */
@@ -153,39 +193,38 @@
       position:absolute;
       left:50%;
       top:50%;
-      width:clamp(42px, 7vmin, 90px);
-      height:clamp(42px, 7vmin, 90px);
+      width:clamp(46px, 7.5vmin, 100px);
+      height:clamp(46px, 7.5vmin, 100px);
       transform:translate(-50%,-50%);
       border-radius:18px;
-      border:1px solid rgba(127,227,255,.15);
+      border:1px solid rgba(127,240,255,.18);
       background: rgba(3,6,16,.22);
-      box-shadow: 0 0 28px rgba(76,201,255,.12);
+      box-shadow:
+        0 0 22px rgba(53,213,255,.14),
+        0 0 55px rgba(139,92,255,.10);
       overflow:hidden;
       display:grid; place-items:center;
-      opacity:.92;
+      opacity:.95;
     }
     .sticker img{
       width:100%;
       height:100%;
       object-fit:contain;
       display:block;
-      filter: drop-shadow(0 0 10px rgba(76,201,255,.20));
+      filter: drop-shadow(0 0 14px rgba(53,213,255,.25));
     }
+
     .hint{
       position:absolute; inset:auto 2.8vmin 2.8vmin auto;
       font-size:12px;
-      color:rgba(234,247,255,.55);
+      color:rgba(234,247,255,.62);
       background: rgba(2,4,10,.22);
-      border:1px solid rgba(127,227,255,.08);
+      border:1px solid rgba(127,240,255,.08);
       padding:8px 10px;
       border-radius:12px;
       backdrop-filter: blur(8px);
       pointer-events:none;
       max-width:min(360px, 82vw);
-    }
-
-    @media (prefers-reduced-motion: reduce){
-      .hint::after{ content:" (animación reducida)"; }
     }
   </style>
 </head>
@@ -203,58 +242,53 @@
       </div>
 
       <div class="caption">
-        <h1>PARA MI UNIVERSO</h1>
-        <p>Siempre rotando alrededor de ti ✨</p>
+        <h1>PARA MI UNIVERSO 💙✨</h1>
+        <p>Siempre girando alrededor de ti 💫💖</p>
       </div>
 
       <div class="hint">
-        Tip: si tienes un sticker PNG/WebP, ponlo en la misma carpeta y cambia el nombre en el código
-        (<b>sticker.png</b>). Si no lo quieres, borra el bloque “sticker”.
+        Si usas sticker: pon tu PNG/WebP en la misma carpeta y renómbralo <b>sticker.png</b>.
       </div>
     </div>
   </div>
 
   <script>
-    // =========================
-    //  CONFIG (tú puedes editar)
-    // =========================
+    // ========= TEXTOS (con amor + emojis) =========
     const phrases = [
-      "my desastre fav",
-      "mi niño",
-      "mi todo",
-      "mi mundo",
-      "mi cielo",
-      "mi husband",
-      "mi rey",
-      "el dueño de mi corazón",
-      "el color que hace mis días más hermosos",
-      "te amo",
-      "mi chiquito",
-      "hermoso",
-      "precioso",
-      "mi tesoro",
-      "lo más preciado para mí"
+      "💙 te amo ✨",
+      "🌙 mi cielo 💫",
+      "👑 mi rey 💙",
+      "💍 mi husband 💖",
+      "🧸 mi niño ✨",
+      "🥺 mi chiquito 💙",
+      "😍 hermoso 💫",
+      "✨ precioso 💙",
+      "💎 mi tesoro 💖",
+      "🌎 mi mundo 💫",
+      "🫶 mi todo 💙",
+      "💘 el dueño de mi corazón 💫",
+      "🌈 el color que hace mis días más hermosos 💙",
+      "😈 my desastre fav 💖",
+      "💖 lo más preciado para mí ✨"
     ];
 
-    // Velocidades (más bajo = más lento)
-    const ORBIT_SPEED = 0.035;      // frases
-    const STARS_SPEED = 0.010;      // estrellas
-    const TWINKLE_SPEED = 0.85;     // parpadeo suave
+    // ========= VELOCIDADES =========
+    const ORBIT_SPEED = 0.032;   // frases más lento
+    const STARS_SPEED = 0.012;   // estrellas giran suave
+    const TWINKLE_SPEED = 0.95;  // parpadeo
 
-    // Radios de órbita para frases (se ajusta a pantalla)
-    const ORBIT_MIN = 180; // px
-    const ORBIT_MAX = 360; // px
+    // ========= ÓRBITAS =========
+    const ORBIT_MIN = 185; // px
+    const ORBIT_MAX = 385; // px
 
-    // Sticker (opcional)
-    const STICKER_ENABLED = true;       // pon false si NO lo quieres
-    const STICKER_FILE = "sticker.png"; // cambia por el nombre real
+    // ========= STICKER =========
+    const STICKER_ENABLED = true;
+    const STICKER_FILE = "sticker.png";
 
-    // =========================
-    //  ORBIT TEXT LAYER
-    // =========================
+    // ========= ORBIT LAYER =========
     const orbitLayer = document.getElementById("orbitLayer");
 
-    const phraseNodes = phrases.map((t, i) => {
+    const phraseNodes = phrases.map((t) => {
       const el = document.createElement("div");
       el.className = "phrase";
       el.textContent = t;
@@ -270,17 +304,14 @@
       orbitLayer.appendChild(stickerNode);
     }
 
-    // =========================
-    //  STAR CANVAS (particles)
-    // =========================
+    // ========= STAR CANVAS =========
     const canvas = document.getElementById("stars");
     const ctx = canvas.getContext("2d", { alpha: true });
 
     let W = 0, H = 0, DPR = 1;
     let center = { x: 0, y: 0 };
-
-    const starCount = 380;   // cantidad total
     const stars = [];
+    const starCount = 520; // más estrellas
 
     function rand(a,b){ return a + Math.random()*(b-a); }
 
@@ -297,68 +328,90 @@
       center.x = W/2;
       center.y = H/2;
 
-      // (Re)crear estrellas
       stars.length = 0;
-      const maxR = Math.hypot(W, H) * 0.55;
+      const maxR = Math.hypot(W, H) * 0.62;
+
       for(let i=0;i<starCount;i++){
-        const r = rand(40, maxR);
+        const r = rand(30, maxR);
         const a = rand(0, Math.PI*2);
+        const big = Math.random() < 0.16;
+
         stars.push({
           baseR: r,
           ang: a,
-          size: rand(0.6, 1.8),
-          alpha: rand(0.15, 0.85),
+          size: big ? rand(1.2, 2.4) : rand(0.55, 1.5),
+          alpha: big ? rand(0.25, 0.95) : rand(0.12, 0.78),
           tw: rand(0, Math.PI*2),
-          layer: rand(0.25, 1.0) // parallax/velocidad relativa
+          layer: rand(0.25, 1.0),
+          tint: Math.random() < 0.18 ? "pink" : (Math.random() < 0.35 ? "violet" : "blue")
         });
       }
     }
-
     window.addEventListener("resize", resize, { passive:true });
     resize();
 
     function drawBackground(){
-      // fondo con gradiente sutil (no saturado)
-      const g = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, Math.max(W,H)*0.7);
-      g.addColorStop(0, "rgba(20, 45, 95, 0.18)");
-      g.addColorStop(0.45, "rgba(6, 10, 25, 0.55)");
-      g.addColorStop(1, "rgba(0, 0, 0, 1)");
+      // galaxia más colorida
+      const g = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, Math.max(W,H)*0.75);
+      g.addColorStop(0, "rgba(53, 213, 255, 0.20)");
+      g.addColorStop(0.28, "rgba(139, 92, 255, 0.16)");
+      g.addColorStop(0.55, "rgba(255, 79, 216, 0.08)");
+      g.addColorStop(0.78, "rgba(6, 10, 25, 0.65)");
+      g.addColorStop(1, "rgba(0,0,0,1)");
       ctx.fillStyle = g;
       ctx.fillRect(0,0,W,H);
+
+      // “nubes” suaves
+      for(let i=0;i<3;i++){
+        const x = center.x + rand(-W*0.2, W*0.2);
+        const y = center.y + rand(-H*0.2, H*0.2);
+        const r = rand(Math.min(W,H)*0.22, Math.min(W,H)*0.36);
+        const cloud = ctx.createRadialGradient(x,y,0,x,y,r);
+        cloud.addColorStop(0, "rgba(127, 240, 255, 0.08)");
+        cloud.addColorStop(0.45, "rgba(139, 92, 255, 0.06)");
+        cloud.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = cloud;
+        ctx.beginPath();
+        ctx.arc(x,y,r,0,Math.PI*2);
+        ctx.fill();
+      }
+    }
+
+    function starColor(s, al){
+      if (s.tint === "pink")   return `rgba(255, 79, 216, ${al})`;
+      if (s.tint === "violet") return `rgba(139, 92, 255, ${al})`;
+      return `rgba(234, 247, 255, ${al})`;
     }
 
     function drawStars(t){
-      ctx.save();
-      // estrellas
       for(const s of stars){
-        const a = s.ang;
-        const r = s.baseR;
+        const x = center.x + Math.cos(s.ang) * s.baseR;
+        const y = center.y + Math.sin(s.ang) * s.baseR;
 
-        const x = center.x + Math.cos(a) * r;
-        const y = center.y + Math.sin(a) * r;
-
-        const twinkle = 0.65 + 0.35 * Math.sin(s.tw + t*TWINKLE_SPEED);
+        const twinkle = 0.62 + 0.38 * Math.sin(s.tw + t*TWINKLE_SPEED);
         const al = Math.max(0, Math.min(1, s.alpha * twinkle));
 
-        ctx.fillStyle = `rgba(234,247,255,${al})`;
+        // núcleo
+        ctx.fillStyle = starColor(s, al);
         ctx.beginPath();
         ctx.arc(x, y, s.size, 0, Math.PI*2);
         ctx.fill();
 
-        // glow mini para algunas
-        if (s.size > 1.3) {
-          ctx.fillStyle = `rgba(76,201,255,${al*0.12})`;
-          ctx.beginPath();
-          ctx.arc(x, y, s.size*3.2, 0, Math.PI*2);
-          ctx.fill();
-        }
+        // glow extra (vida)
+        const glow = s.size > 1.3 ? 3.8 : 2.4;
+        ctx.fillStyle = (s.tint==="pink")
+          ? `rgba(255,79,216,${al*0.10})`
+          : (s.tint==="violet")
+            ? `rgba(139,92,255,${al*0.10})`
+            : `rgba(53,213,255,${al*0.10})`;
+
+        ctx.beginPath();
+        ctx.arc(x, y, s.size*glow, 0, Math.PI*2);
+        ctx.fill();
       }
-      ctx.restore();
     }
 
-    // =========================
-    //  ANIM LOOP
-    // =========================
+    // ========= LOOP =========
     let last = performance.now();
     let time = 0;
 
@@ -367,51 +420,46 @@
       last = now;
       time += dt;
 
-      // mover estrellas (rotación suave)
+      // rotación suave estrellas
       for(const s of stars){
         s.ang += dt * STARS_SPEED * (0.35 + s.layer);
-        s.tw += dt * (0.25 + s.layer*0.6);
+        s.tw  += dt * (0.25 + s.layer*0.7);
       }
 
-      // dibujar
       ctx.clearRect(0,0,W,H);
       drawBackground();
       drawStars(time);
 
-      // órbitas de texto
+      // órbitas frases (2 anillos)
       const minSide = Math.min(W,H);
-      const rMin = Math.max(ORBIT_MIN, minSide * 0.22);
-      const rMax = Math.max(ORBIT_MAX, minSide * 0.38);
+      const rMin = Math.max(ORBIT_MIN, minSide * 0.225);
+      const rMax = Math.max(ORBIT_MAX, minSide * 0.395);
 
       const count = phraseNodes.length;
       for(let i=0;i<count;i++){
         const el = phraseNodes[i];
-
-        // distribuir en 2 anillos para que no se amontonen
         const ring = (i % 2);
         const radius = ring ? rMax : rMin;
 
         const base = (i / count) * Math.PI*2;
-        const ang = base + time * ORBIT_SPEED * (ring ? 0.9 : 1.0);
+        const ang = base + time * ORBIT_SPEED * (ring ? 0.92 : 1.0);
 
         const x = Math.cos(ang) * radius;
         const y = Math.sin(ang) * radius;
 
-        // leve perspectiva/opacity
         const depth = 0.6 + 0.4 * (Math.sin(ang) * 0.5 + 0.5);
-
-        el.style.transform =
-          `translate(-50%,-50%) translate(${x}px, ${y}px)`;
-        el.style.opacity = (0.70 + 0.25*depth).toFixed(3);
+        el.style.transform = `translate(-50%,-50%) translate(${x}px, ${y}px)`;
+        el.style.opacity = (0.78 + 0.20*depth).toFixed(3);
       }
 
-      // sticker orbitando (si existe)
+      // sticker orbitando
       if (stickerNode){
         const r = (rMin + rMax) * 0.52;
         const a = time * (ORBIT_SPEED * 0.85) + 1.2;
         const x = Math.cos(a) * r;
         const y = Math.sin(a) * r;
-        stickerNode.style.transform = `translate(-50%,-50%) translate(${x}px, ${y}px) rotate(${a*18}deg)`;
+        stickerNode.style.transform =
+          `translate(-50%,-50%) translate(${x}px, ${y}px) rotate(${a*18}deg)`;
       }
 
       requestAnimationFrame(tick);
