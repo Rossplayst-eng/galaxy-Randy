@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Randy ❤️</title>
+  <style>
+    html, body { height:100%; margin:0; background:#000; overflow:hidden; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+
+    /* 9:16 stage centrado */
+    .frame{
+      position:fixed; inset:0;
+      display:grid; place-items:center;
+      background:#000;
+    }
+    .stage{
+      width:min(100vw, calc(100vh * 9/16));
+      height:min(100vh, calc(100vw * 16/9));
+      position:relative;
+      overflow:hidden;
+      border-radius:18px;
+      background:#000;
+    }
+    canvas{ position:absolute; inset:0; width:100%; height:100%; }
+
+    .title{
+      position:absolute; top:18px; left:50%;
+      transform:translateX(-50%);
+      z-index:5;
+      font-size:clamp(26px, 5.5vw, 44px);
+      font-weight:800;
+      color:#ff7ad9;
+      white-space:nowrap;
+      user-select:none;
+      text-shadow:
+        0 0 12px rgba(255,122,217,.85),
+        0 0 34px rgba(255,122,217,.45);
+      display:flex; align-items:center; gap:10px;
+    }
+    .title .heart{
+      filter: drop-shadow(0 0 14px rgba(255, 80, 140, .9));
+    }
+
+    .hint{
+      position:absolute; bottom:14px; left:50%;
+      transform:translateX(-50%);
+      z-index:6;
+      color:rgba(255,255,255,.75);
+      font-size:12px;
+      padding:8px 10px;
+      border-radius:12px;
+      border:1px solid rgba(255,122,217,.18);
+      background:rgba(0,0,0,.28);
+      backdrop-filter: blur(8px);
+      user-select:none;
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <div class="stage" id="stage">
+      <canvas id="c"></canvas>
+      <div class="title">Randy <span class="heart">❤️</span></div>
+      <div class="hint">Toca la pantalla ✨</div>
+    </div>
+  </div>
+
+  <script>
+    const stage = document.getElementById('stage');
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d', { alpha:false });
+
+    const W = () => stage.clientWidth;
+    const H = () => stage.clientHeight;
+    const rand = (a,b)=>a+Math.random()*(b-a);
+    const pick = (arr)=>arr[Math.floor(Math.random()*arr.length)];
+
+    function resize(){
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      canvas.width = Math.floor(W()*dpr);
+      canvas.height = Math.floor(H()*dpr);
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+    }
+    addEventListener('resize', resize);
+    resize();
+
+    // Textos pedidos
+    const phrases = [
+      "Te amo",
+      "Mi desastre fav",
+      "Mi todo",
+      "Mi mundo",
+      "Mi universo"
+    ];
+
+    // Ositos “sticker” sin depender de archivos (para que NUNCA falle)
+    const bears = ["🐻‍❄️🤎", "🧸💞", "🐻‍❄️💕", "🤍🧸", "🐻🤍"];
+
+    // Estrellas
+    const stars = [];
+    function makeStars(n=1100){
+      stars.length = 0;
+      for(let i=0;i<n;i++){
+        stars.push({
+          x: Math.random()*W(),
+          y: Math.random()*H(),
+          z: Math.random(),
+          s: rand(0.4, 1.9),
+          tw: rand(0, Math.PI*2)
+        });
+      }
+    }
+    makeStars();
+
+    // Objetos flotando (textos + “stickers”)
+    const floaters = [];
+    function spawnFloaters(count=30){
+      floaters.length = 0;
+      for(let i=0;i<count;i++){
+        const isSticker = Math.random() < 0.45;
+        floaters.push({
+          kind: isSticker ? "sticker" : "text",
+          text: isSticker ? pick(bears) : pick(phrases),
+          x: rand(0, W()),
+          y: rand(H()*0.42, H()+60),
+          vx: rand(-0.18, 0.18),
+          vy: rand(-0.28, -0.07),
+          size: isSticker ? rand(22, 34) : rand(18, 30),
+          a: rand(0.55, 1),
+          hue: rand(305, 335),
+          glow: rand(10, 22),
+          rot: rand(-0.06, 0.06),
+          depth: rand(0.7, 1.4)
+        });
+      }
+    }
+    spawnFloaters();
+
+    function drawPortal(t){
+      const cx = W()/2;
+      const cy = H()*0.60;
+
+      // bruma
+      const fog = ctx.createRadialGradient(cx, cy, 5, cx, cy, Math.min(W(),H())*0.8);
+      fog.addColorStop(0, "rgba(255, 80, 160, 0.10)");
+      fog.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = fog;
+      ctx.fillRect(0,0,W(),H());
+
+      const baseR = Math.min(W(),H())*0.18;
+      const pulse = 1 + Math.sin(t*1.6)*0.06;
+      const r = baseR*pulse;
+
+      // anillos glow
+      for(let i=0;i<6;i++){
+        ctx.beginPath();
+        ctx.arc(cx, cy, r + i*7, 0, Math.PI*2);
+        ctx.strokeStyle = `rgba(255, 80, 200, ${0.16 - i*0.02})`;
+        ctx.lineWidth = 11 + i*2;
+        ctx.shadowBlur = 26 + i*10;
+        ctx.shadowColor = "rgba(255, 80, 200, 0.95)";
+        ctx.stroke();
+      }
+
+      // borde blanco
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI*2);
+      ctx.strokeStyle = "rgba(255, 225, 255, 0.95)";
+      ctx.lineWidth = 5;
+      ctx.shadowBlur = 30;
+      ctx.shadowColor = "rgba(255, 120, 220, 1)";
+      ctx.stroke();
+
+      // centro oscuro
+      const core = ctx.createRadialGradient(cx, cy, 1, cx, cy, r*0.9);
+      core.addColorStop(0, "rgba(8,0,18,0.98)");
+      core.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = core;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r*0.9, 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    function draw(){
+      const t = performance.now()/1000;
+
+      // fondo
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0,0,W(),H());
+
+      // estrellas con “jale” al centro
+      const cx = W()/2, cy = H()*0.60;
+      for(const s of stars){
+        s.tw += 0.02*(0.4+s.z);
+        const tw = 0.65 + 0.35*Math.sin(s.tw);
+
+        const dx = s.x - cx, dy = s.y - cy;
+        const pull = 0.00002*(0.2 + s.z);
+        s.x -= dx * pull * 60;
+        s.y -= dy * pull * 60;
+
+        if(s.x < -20) s.x = W()+20;
+        if(s.x > W()+20) s.x = -20;
+        if(s.y < -20) s.y = H()+20;
+        if(s.y > H()+20) s.y = -20;
+
+        ctx.globalAlpha = tw * (0.35 + 0.65*s.z);
+        ctx.fillStyle = "white";
+        ctx.fillRect(s.x, s.y, s.s, s.s);
+      }
+      ctx.globalAlpha = 1;
+
+      drawPortal(t);
+
+      // flotadores orbitando
+      for(const f of floaters){
+        f.x += f.vx * 1.2 * f.depth;
+        f.y += f.vy * 1.2 * f.depth;
+
+        const ang = Math.atan2(f.y - cy, f.x - cx) + f.rot*0.10;
+        const dist = Math.hypot(f.x - cx, f.y - cy);
+        f.x = cx + Math.cos(ang) * dist;
+        f.y = cy + Math.sin(ang) * dist;
+
+        if(f.y < -90 || f.x < -260 || f.x > W()+260){
+          f.x = rand(0, W());
+          f.y = rand(H()*0.55, H()+100);
+          f.text = (f.kind==="sticker") ? pick(bears) : pick(phrases);
+        }
+
+        ctx.save();
+        ctx.globalAlpha = f.a;
+
+        if(f.kind === "text"){
+          ctx.font = `${Math.round(f.size)}px system-ui`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.shadowBlur = f.glow;
+          ctx.shadowColor = "rgba(255, 90, 200, 0.95)";
+          ctx.fillStyle = `hsl(${f.hue} 100% 75%)`;
+          const wob = Math.sin(t*2 + f.x*0.01)*0.8;
+          ctx.fillText(f.text, f.x, f.y + wob);
+        } else {
+          ctx.font = `${Math.round(f.size)}px Apple Color Emoji, Segoe UI Emoji`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.shadowBlur = 18;
+          ctx.shadowColor = "rgba(255, 90, 200, 0.65)";
+          const wob = Math.sin(t*2 + f.x*0.01)*0.9;
+          ctx.fillText(f.text, f.x, f.y + wob);
+        }
+
+        ctx.restore();
+      }
+
+      // sparkles
+      for(let i=0;i<36;i++){
+        const a = rand(0, Math.PI*2);
+        const r = rand(0, Math.min(W(),H())*0.34);
+        ctx.globalAlpha = 0.08;
+        ctx.fillStyle = "white";
+        ctx.fillRect(cx + Math.cos(a)*r, cy + Math.sin(a)*r, 1.2, 1.2);
+      }
+      ctx.globalAlpha = 1;
+
+      requestAnimationFrame(draw);
+    }
+    requestAnimationFrame(draw);
+
+    // toque: burst de corazones
+    stage.addEventListener('pointerdown', (e)=>{
+      const rect = stage.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const burst = ["💗","💞","💕","✨","❤️"];
+      for(let i=0;i<12;i++){
+        floaters.push({
+          kind: "text",
+          text: pick(burst),
+          x: x + rand(-28,28),
+          y: y + rand(-28,28),
+          vx: rand(-0.5, 0.5),
+          vy: rand(-0.8, -0.25),
+          size: rand(18, 28),
+          a: rand(0.7, 1),
+          hue: rand(305, 335),
+          glow: rand(10, 18),
+          rot: rand(-0.1, 0.1),
+          depth: rand(0.9, 1.6)
+        });
+      }
+    });
+  </script>
+</body>
+</html>
