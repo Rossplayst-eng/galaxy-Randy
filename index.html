@@ -2,329 +2,426 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Randy 💙</title>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&display=swap" rel="stylesheet">
-
   <style>
-    html, body { height:100%; margin:0; background:#000; overflow:hidden; }
-    body { font-family: "Baloo 2", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    html, body { height: 100%; margin: 0; background:#000; overflow:hidden; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
 
-    .frame{ position:fixed; inset:0; display:grid; place-items:center; background:#000; }
-    .stage{
-      width:min(100vw, calc(100vh * 9/16));
-      height:min(100vh, calc(100vw * 16/9));
-      position:relative;
-      overflow:hidden;
-      border-radius:18px;
-      background:#000;
+    /* 9:16 stage centrado */
+    .frame {
+      position: fixed; inset: 0;
+      display: grid; place-items: center;
+      background: #000;
     }
-    canvas{ position:absolute; inset:0; width:100%; height:100%; }
+    .stage {
+      width: min(100vw, calc(100vh * 9/16));
+      height: min(100vh, calc(100vw * 16/9));
+      position: relative;
+      overflow: hidden;
+      border-radius: 18px;
+      background: #000;
+    }
+    canvas { position:absolute; inset:0; width:100%; height:100%; display:block; }
 
     .title{
-      position:absolute; top:18px; left:50%;
+      position:absolute; top:16px; left:50%;
       transform:translateX(-50%);
       z-index:5;
-      font-size:clamp(30px, 6vw, 52px);
-      font-weight:800;
-      white-space:nowrap;
-      user-select:none;
-      display:flex; align-items:center; gap:10px;
       color:#7ad7ff;
-      text-shadow: 0 0 14px rgba(80,200,255,.90), 0 0 38px rgba(80,200,255,.45);
+      font-weight:800;
+      font-size: clamp(28px, 6vw, 52px);
+      letter-spacing: .2px;
+      text-shadow: 0 0 16px rgba(70,190,255,.95), 0 0 40px rgba(70,190,255,.35);
+      user-select:none;
+      white-space:nowrap;
+      display:flex; gap:10px; align-items:center;
+      pointer-events:none;
     }
-    .title .heart{ filter: drop-shadow(0 0 16px rgba(70, 180, 255, .95)); }
+    .title span { filter: drop-shadow(0 0 16px rgba(70,190,255,.95)); }
+
+    .hint{
+      position:absolute; bottom:12px; left:50%;
+      transform:translateX(-50%);
+      z-index:6;
+      color:rgba(255,255,255,.7);
+      font-size:12px;
+      padding:8px 10px;
+      border-radius:12px;
+      border:1px solid rgba(120,220,255,.18);
+      background:rgba(0,0,0,.25);
+      backdrop-filter: blur(8px);
+      user-select:none;
+      pointer-events:none;
+    }
   </style>
 </head>
 
 <body>
   <div class="frame">
     <div class="stage" id="stage">
+      <div class="title">Randy <span>💙</span></div>
+      <div class="hint">Toca para chispitas ✨</div>
       <canvas id="c"></canvas>
-      <div class="title">Randy <span class="heart">💙</span></div>
     </div>
   </div>
 
-<script>
-(() => {
+<script type="module">
+  import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
+
+  // ====== AJUSTES RÁPIDOS ======
+  const STICKER_PATH = "IMG_4079.png";      // tu PNG al lado de index.html
+  const PHRASES = ["Te amo","Mi desastre fav","Mi todo","Mi mundo","Mi universo"];
+
+  const ORBIT_SPEED = 0.18;                // más bajo = más lento (prueba 0.12)
+  const BG_ROT_SPEED = 0.03;               // estrellas de fondo rotando suave
+  const RING_SPARKLES = 600;               // estrellitas girando con letras
+  const WORD_COUNT = 26;                   // cuántas palabras en el anillo
+  const STICKER_COUNT = 16;                // cuántos stickers orbitando
+
+  // Paleta azul neón
+  const BLUE = new THREE.Color("#46beff");
+  const BLUE_SOFT = new THREE.Color("#bfefff");
+
+  // ====== Setup ======
   const stage = document.getElementById("stage");
   const canvas = document.getElementById("c");
-  const ctx = canvas.getContext("2d", { alpha:false });
 
-  const W = () => stage.clientWidth;
-  const H = () => stage.clientHeight;
-  const rand = (a,b)=>a+Math.random()*(b-a);
-  const pick = (arr)=>arr[Math.floor(Math.random()*arr.length)];
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+  renderer.setClearColor(0x000000, 1);
 
-  function resize(){
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
-    canvas.width = Math.floor(W()*dpr);
-    canvas.height = Math.floor(H()*dpr);
-    ctx.setTransform(dpr,0,0,dpr,0,0);
+  const scene = new THREE.Scene();
+
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 200);
+  camera.position.set(0, 1.9, 7.6);
+
+  // Luz suave + brillo
+  scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+  const key = new THREE.DirectionalLight(0xffffff, 0.85);
+  key.position.set(2, 4, 5);
+  scene.add(key);
+
+  function resize() {
+    const w = stage.clientWidth;
+    const h = stage.clientHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
   }
-  addEventListener("resize", resize);
+  window.addEventListener("resize", resize);
   resize();
 
-  // ===== CONFIG =====
-  const texts = ["Te amo","Mi desastre fav","Mi todo","Mi mundo","Mi universo"];
-  const STICKER_PATH = "sticker.png"; // <-- tu sticker PNG (fondo transparente)
+  // ====== Grupo central (todo gira alrededor de Saturno) ======
+  const root = new THREE.Group();
+  scene.add(root);
 
-  const ORBIT_SPEED = 0.03;        // <<< más lento (baja a 0.03 si lo quieres aún más)
-  const BG_STAR_COUNT = 420;       // estrellas esparcidas
-  const BG_SWIRL_SPEED = 0.015;    // <<< rotación suave del fondo (más bajo = más suave)
-  const RING_SPARKLES = 520;       // muchas estrellitas girando con las letras
-  const WORD_COUNT = 22;
-  const STICKER_COUNT = 14;
-
-  // Paleta AZUL neón
-  const BLUE_GLOW = "rgba(70,190,255,0.95)";
-  const BLUE_GLOW_SOFT = "rgba(70,190,255,0.60)";
-  const BLUE_FILL = "rgba(170,235,255,0.98)";
-  const BLUE_STROKE = "rgba(235,250,255,0.95)";
-  const BLUE_RING = "rgba(70,190,255,0.22)";
-
-  // ===== sticker =====
-  const stickerImg = new Image();
-  let stickerReady = false;
-  stickerImg.onload = () => stickerReady = true;
-  stickerImg.onerror = () => stickerReady = false;
-  stickerImg.src = STICKER_PATH;
-
-  // ===== estrellas fondo (esparcidas + rotando) =====
-  const bgStars = [];
-  function makeBgStars(){
-    bgStars.length = 0;
-    for(let i=0;i<BG_STAR_COUNT;i++){
-      bgStars.push({
-        x: rand(0, W()),
-        y: rand(0, H()),
-        z: rand(0.2, 1),
-        s: rand(0.6, 1.6),
-        tw: rand(0, Math.PI*2)
-      });
-    }
+  // ====== Fondo de estrellas (esparcidas) ======
+  const bgStarGeo = new THREE.BufferGeometry();
+  const BG_COUNT = 2000;
+  const pos = new Float32Array(BG_COUNT * 3);
+  for (let i = 0; i < BG_COUNT; i++) {
+    // esfera grande
+    const r = THREE.MathUtils.randFloat(25, 55);
+    const theta = THREE.MathUtils.randFloat(0, Math.PI * 2);
+    const phi = Math.acos(THREE.MathUtils.randFloat(-1, 1));
+    pos[i*3+0] = r * Math.sin(phi) * Math.cos(theta);
+    pos[i*3+1] = r * Math.cos(phi) * 0.55;     // aplana un poquito
+    pos[i*3+2] = r * Math.sin(phi) * Math.sin(theta);
   }
-  makeBgStars();
+  bgStarGeo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  const bgStarMat = new THREE.PointsMaterial({
+    color: 0xffffff,
+    size: 0.06,
+    transparent: true,
+    opacity: 0.75,
+    depthWrite: false
+  });
+  const bgStars = new THREE.Points(bgStarGeo, bgStarMat);
+  root.add(bgStars);
 
-  // ===== chispitas del anillo =====
-  const sparkles = [];
-  function makeSparkles(){
-    sparkles.length = 0;
-    for(let i=0;i<RING_SPARKLES;i++){
-      sparkles.push({
-        a: rand(0, Math.PI*2),
-        lane: rand(0.90, 1.12),
-        tw: rand(0, Math.PI*2),
-        s: rand(0.8, 1.9),
-        speed: rand(0.7, 1.4)
-      });
-    }
-  }
-  makeSparkles();
+  // ====== Saturno (bola) ======
+  const saturn = new THREE.Group();
+  saturn.position.set(0, -1.35, 0);       // “piso” abajo
+  root.add(saturn);
 
-  // ===== Saturno (azul) =====
-  function drawSaturn(t){
-    const cx = W()/2;
-    const cy = H()*0.76;
-    const planetR = Math.min(W(),H()) * 0.16;
+  const planetGeo = new THREE.SphereGeometry(1.35, 64, 64);
+  const planetMat = new THREE.MeshStandardMaterial({
+    color: new THREE.Color("#15324a"),
+    roughness: 0.55,
+    metalness: 0.05,
+    emissive: new THREE.Color("#0b1d2b"),
+    emissiveIntensity: 0.35
+  });
+  const planet = new THREE.Mesh(planetGeo, planetMat);
+  saturn.add(planet);
 
-    // bruma azul
-    const haze = ctx.createRadialGradient(cx, cy, 1, cx, cy, planetR*3.1);
-    haze.addColorStop(0, "rgba(70,190,255,0.10)");
-    haze.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = haze;
-    ctx.fillRect(0,0,W(),H());
+  // brillo suave alrededor
+  const glowGeo = new THREE.SphereGeometry(1.52, 48, 48);
+  const glowMat = new THREE.MeshBasicMaterial({
+    color: BLUE,
+    transparent: true,
+    opacity: 0.14,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+  const planetGlow = new THREE.Mesh(glowGeo, glowMat);
+  saturn.add(planetGlow);
 
-    const ringTilt = 0.55 + Math.sin(t*0.8)*0.02;
+  // ====== Anillo 3D ======
+  const ring = new THREE.Group();
+  ring.rotation.x = THREE.MathUtils.degToRad(68);   // inclinación tipo saturno
+  saturn.add(ring);
 
-    // anillo glow (elipse)
-    ctx.save();
-    ctx.translate(cx, cy);
-    for(let i=0;i<5;i++){
-      ctx.beginPath();
-      ctx.ellipse(0, 0, planetR*2.05 + i*6, planetR*0.95*ringTilt + i*2, 0, 0, Math.PI*2);
-      ctx.strokeStyle = `rgba(70,190,255, ${0.18 - i*0.03})`;
-      ctx.lineWidth = 10 + i*2;
-      ctx.shadowBlur = 28 + i*10;
-      ctx.shadowColor = BLUE_GLOW;
-      ctx.stroke();
-    }
-    // highlight
-    ctx.beginPath();
-    ctx.ellipse(0, 0, planetR*2.0, planetR*0.92*ringTilt, 0, 0, Math.PI*2);
-    ctx.strokeStyle = BLUE_STROKE;
-    ctx.lineWidth = 4;
-    ctx.shadowBlur = 26;
-    ctx.shadowColor = BLUE_GLOW;
-    ctx.stroke();
-    ctx.restore();
+  // Base ring (tubo)
+  const torusGeo = new THREE.TorusGeometry(2.65, 0.10, 16, 240);
+  const torusMat = new THREE.MeshBasicMaterial({
+    color: BLUE,
+    transparent: true,
+    opacity: 0.45,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+  const torus = new THREE.Mesh(torusGeo, torusMat);
+  ring.add(torus);
 
-    // planeta
-    ctx.save();
-    ctx.translate(cx, cy);
-    const grad = ctx.createRadialGradient(-planetR*0.35, -planetR*0.35, planetR*0.2, 0, 0, planetR*1.2);
-    grad.addColorStop(0, "rgba(210,245,255,0.95)");
-    grad.addColorStop(0.6, "rgba(120,210,255,0.85)");
-    grad.addColorStop(1, "rgba(5,20,40,0.98)");
-    ctx.fillStyle = grad;
-    ctx.shadowBlur = 24;
-    ctx.shadowColor = BLUE_GLOW_SOFT;
-    ctx.beginPath();
-    ctx.arc(0, 0, planetR, 0, Math.PI*2);
-    ctx.fill();
+  // Ring highlight (más fino y blanco-azul)
+  const torusGeo2 = new THREE.TorusGeometry(2.65, 0.04, 12, 240);
+  const torusMat2 = new THREE.MeshBasicMaterial({
+    color: BLUE_SOFT,
+    transparent: true,
+    opacity: 0.55,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+  const torus2 = new THREE.Mesh(torusGeo2, torusMat2);
+  ring.add(torus2);
 
-    // sombra
-    ctx.globalAlpha = 0.35;
-    ctx.fillStyle = "rgba(0,0,0,0.65)";
-    ctx.beginPath();
-    ctx.ellipse(planetR*0.15, planetR*0.35, planetR*0.95, planetR*0.65, 0, 0, Math.PI*2);
-    ctx.fill();
-    ctx.globalAlpha = 1;
-    ctx.restore();
+  // ====== Helpers: Sprites con texto ======
+  function makeTextTexture(text) {
+    const c = document.createElement("canvas");
+    const ctx = c.getContext("2d");
 
-    return { cx, cy, planetR, ringTilt };
-  }
+    // tamaño dinámico
+    c.width = 900;
+    c.height = 220;
 
-  function drawNeonText(str, x, y, size, alpha=1){
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.font = `${size}px "Baloo 2", system-ui`;
+    ctx.clearRect(0,0,c.width,c.height);
+
+    // “gordita rellena” (sin depender de fuentes externas)
+    ctx.font = "900 120px system-ui, -apple-system, Segoe UI, Roboto, Arial";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
-    ctx.shadowBlur = 22;
-    ctx.shadowColor = BLUE_GLOW;
+    // glow
+    ctx.shadowColor = "rgba(70,190,255,0.95)";
+    ctx.shadowBlur = 30;
 
-    ctx.fillStyle = BLUE_FILL;      // relleno
-    ctx.fillText(str, x, y);
+    // fill
+    ctx.fillStyle = "rgba(190,245,255,0.98)";
+    ctx.fillText(text, c.width/2, c.height/2);
 
-    ctx.lineWidth = Math.max(2, size*0.08);
-    ctx.strokeStyle = BLUE_STROKE;  // borde
-    ctx.strokeText(str, x, y);
-
-    ctx.restore();
-  }
-
-  // Fondo esparcido que rota suavemente alrededor de Saturno
-  function drawBgStars(t, sat){
-    const cx = sat.cx;
-    const cy = sat.cy; // centro de giro
-    for(const s of bgStars){
-      s.tw += 0.02*(0.4+s.z);
-      const tw = 0.55 + 0.45*Math.sin(s.tw);
-
-      // rotación suave del cielo alrededor de Saturno
-      const dx = s.x - cx;
-      const dy = s.y - cy;
-      const dist = Math.hypot(dx, dy);
-      const baseAng = Math.atan2(dy, dx);
-      const ang = baseAng + (BG_SWIRL_SPEED * t) * (0.35 + s.z);
-
-      const x = cx + Math.cos(ang)*dist;
-      const y = cy + Math.sin(ang)*dist;
-
-      ctx.globalAlpha = tw * (0.10 + 0.35*s.z);
-      ctx.fillStyle = "white";
-      ctx.fillRect(x, y, s.s, s.s);
-    }
-    ctx.globalAlpha = 1;
-  }
-
-  // Letras + stickers + estrellitas girando sobre el ANILLO real (elipse)
-  function drawRingOrbit(t, sat){
-    const cx = sat.cx;
-    const cy = sat.cy;
-
-    const rx = sat.planetR*2.0;
-    const ry = sat.planetR*0.92*sat.ringTilt;
-
-    // “aura” suave del anillo (piso)
-    ctx.save();
-    ctx.beginPath();
-    ctx.ellipse(cx, cy, rx*1.14, ry*1.14, 0, 0, Math.PI*2);
-    ctx.strokeStyle = BLUE_RING;
+    // outline
+    ctx.shadowBlur = 0;
     ctx.lineWidth = 14;
-    ctx.shadowBlur = 24;
-    ctx.shadowColor = BLUE_GLOW_SOFT;
-    ctx.stroke();
-    ctx.restore();
+    ctx.strokeStyle = "rgba(235,250,255,0.95)";
+    ctx.strokeText(text, c.width/2, c.height/2);
 
-    // sparkles girando (muchas)
-    for(const sp of sparkles){
-      sp.tw += 0.06;
-      const sparkle = 0.45 + 0.55*Math.sin(sp.tw);
+    const tex = new THREE.CanvasTexture(c);
+    tex.minFilter = THREE.LinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    tex.needsUpdate = true;
+    return tex;
+  }
 
-      const a = sp.a + t*ORBIT_SPEED*sp.speed;
-      const x = cx + Math.cos(a) * (rx * sp.lane);
-      const y = cy + Math.sin(a) * (ry * sp.lane);
+  function makeSpriteFromTexture(tex, scaleX=1.9, scaleY=0.48) {
+    const mat = new THREE.SpriteMaterial({
+      map: tex,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
+    });
+    const sp = new THREE.Sprite(mat);
+    sp.scale.set(scaleX, scaleY, 1);
+    return sp;
+  }
 
-      ctx.globalAlpha = sparkle * 0.38;
-      ctx.fillStyle = "white";
-      ctx.fillRect(x, y, sp.s, sp.s);
+  // ====== Sticker sprite ======
+  const loader = new THREE.TextureLoader();
+  const stickerTex = await new Promise((resolve) => {
+    loader.load(
+      STICKER_PATH,
+      (t) => { t.colorSpace = THREE.SRGBColorSpace; resolve(t); },
+      undefined,
+      () => resolve(null)
+    );
+  });
+
+  function makeStickerSprite() {
+    if (!stickerTex) {
+      // fallback si no existe el sticker
+      const tex = makeTextTexture("💙");
+      return makeSpriteFromTexture(tex, 0.7, 0.7);
     }
-    ctx.globalAlpha = 1;
+    const mat = new THREE.SpriteMaterial({
+      map: stickerTex,
+      transparent: true,
+      depthWrite: false
+    });
+    const sp = new THREE.Sprite(mat);
+    sp.scale.set(0.85, 0.85, 1);
+    return sp;
+  }
 
-    // palabras sobre el anillo
-    for(let i=0;i<WORD_COUNT;i++){
-      const a = (i/WORD_COUNT)*Math.PI*2 + t*ORBIT_SPEED;
-      const x = cx + Math.cos(a) * (rx * 1.10);
-      const y = cy + Math.sin(a) * (ry * 1.10);
+  // ====== Orbit: grupo que rota sobre el anillo ======
+  const orbit = new THREE.Group();
+  ring.add(orbit);
 
-      const depth = 0.72 + 0.38*(0.5 + 0.5*Math.sin(a)); // un poco de “profundidad”
-      const size = Math.round((Math.min(W(),H())*0.034) * depth);
+  // Palabras pegadas al anillo (en el plano del anillo)
+  const wordSprites = [];
+  for (let i=0;i<WORD_COUNT;i++){
+    const tex = makeTextTexture(PHRASES[i % PHRASES.length]);
+    const sp = makeSpriteFromTexture(tex, 2.0, 0.55);
+    orbit.add(sp);
+    wordSprites.push(sp);
+  }
 
-      drawNeonText(pick(texts), x, y, size, 0.96);
+  // Stickers (mismo sticker repetido)
+  const stickerSprites = [];
+  for (let i=0;i<STICKER_COUNT;i++){
+    const sp = makeStickerSprite();
+    orbit.add(sp);
+    stickerSprites.push(sp);
+  }
+
+  // Sparkles (estrellitas girando con las letras)
+  const sparkGeo = new THREE.BufferGeometry();
+  const spPos = new Float32Array(RING_SPARKLES * 3);
+  const spSeed = new Float32Array(RING_SPARKLES);
+  for (let i=0;i<RING_SPARKLES;i++){
+    spSeed[i] = Math.random();
+    spPos[i*3+0] = 0;
+    spPos[i*3+1] = 0;
+    spPos[i*3+2] = 0;
+  }
+  sparkGeo.setAttribute("position", new THREE.BufferAttribute(spPos, 3));
+  sparkGeo.setAttribute("seed", new THREE.BufferAttribute(spSeed, 1));
+
+  const sparkMat = new THREE.PointsMaterial({
+    color: 0xffffff,
+    size: 0.06,
+    transparent: true,
+    opacity: 0.85,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending
+  });
+  const sparkles = new THREE.Points(sparkGeo, sparkMat);
+  orbit.add(sparkles);
+
+  // ====== Posicionar elementos alrededor del anillo ======
+  function placeOrbitItems(t){
+    const R = 2.65; // radio del torus
+    // Palabras
+    for (let i=0;i<wordSprites.length;i++){
+      const a = (i/wordSprites.length) * Math.PI*2 + t*ORBIT_SPEED;
+      const x = Math.cos(a) * (R * 1.03);
+      const z = Math.sin(a) * (R * 1.03);
+      wordSprites[i].position.set(x, 0.18, z);
+      // profundidad (cuando “viene hacia cámara” se hace un poquito más grande)
+      const depth = 0.78 + 0.32*(0.5 + 0.5*Math.sin(a));
+      wordSprites[i].scale.set(2.0*depth, 0.55*depth, 1);
     }
 
-    // stickers girando
-    for(let i=0;i<STICKER_COUNT;i++){
-      const a = (i/STICKER_COUNT)*Math.PI*2 - t*ORBIT_SPEED*0.9; // dirección contraria
+    // Stickers
+    for (let i=0;i<stickerSprites.length;i++){
+      const a = (i/stickerSprites.length) * Math.PI*2 - t*ORBIT_SPEED*0.9;
+      const lane = 0.92 + 0.12*Math.sin(i*9.13); // variedad suave
+      const x = Math.cos(a) * (R * lane);
+      const z = Math.sin(a) * (R * lane);
       const depth = 0.75 + 0.35*(0.5 + 0.5*Math.sin(a));
-      const s = Math.round((Math.min(W(),H())*0.075) * depth);
+      stickerSprites[i].position.set(x, -0.15, z);
+      stickerSprites[i].scale.set(0.85*depth, 0.85*depth, 1);
+    }
 
-      const x = cx + Math.cos(a) * (rx * 0.92);
-      const y = cy + Math.sin(a) * (ry * 0.92);
+    // Sparkles
+    const positions = sparkGeo.attributes.position.array;
+    const seeds = sparkGeo.attributes.seed.array;
+    for (let i=0;i<RING_SPARKLES;i++){
+      const base = seeds[i] * Math.PI*2;
+      const speed = 0.7 + 1.4*seeds[i];
+      const a = base + t*ORBIT_SPEED*speed;
+      const lane = 0.90 + 0.28*Math.sin(seeds[i]*50.0);
+      const x = Math.cos(a) * (R * lane);
+      const z = Math.sin(a) * (R * lane);
+      const y = (Math.sin(seeds[i]*100.0 + t*2.0) * 0.06);
+      positions[i*3+0] = x;
+      positions[i*3+1] = y;
+      positions[i*3+2] = z;
+    }
+    sparkGeo.attributes.position.needsUpdate = true;
+  }
 
-      ctx.save();
-      ctx.globalAlpha = 0.95;
-      ctx.shadowBlur = 20;
-      ctx.shadowColor = BLUE_GLOW_SOFT;
-      if(stickerReady){
-        ctx.drawImage(stickerImg, x - s/2, y - s/2, s, s);
-      } else {
-        ctx.font = `${Math.max(22, s*0.45)}px Apple Color Emoji, Segoe UI Emoji`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText("🧸💙", x, y);
-      }
-      ctx.restore();
+  // ====== Toque: explosión de chispitas (pro, simple) ======
+  const tapBurst = [];
+  stage.addEventListener("pointerdown", (e)=>{
+    const rect = stage.getBoundingClientRect();
+    const nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    const ny = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
+    // crea 30 sparkles rápidos
+    for (let i=0;i<30;i++){
+      tapBurst.push({
+        a: Math.random()*Math.PI*2,
+        r: 1.8 + Math.random()*1.4,
+        t: 0,
+        life: 0.6 + Math.random()*0.6,
+        nx, ny
+      });
+    }
+  });
+
+  function drawTapBurst(dt){
+    // (solo añade un poquito más de brillo al ring por un momento)
+    if (tapBurst.length === 0) return;
+    torusMat.opacity = Math.min(0.75, torusMat.opacity + 0.010);
+    torusMat2.opacity = Math.min(0.85, torusMat2.opacity + 0.012);
+
+    for (let i=tapBurst.length-1; i>=0; i--){
+      tapBurst[i].t += dt;
+      if (tapBurst[i].t >= tapBurst[i].life) tapBurst.splice(i,1);
     }
   }
 
-  // loop
-  function tick(now){
-    const t = now/1000;
-    ctx.fillStyle = "#000";
-    ctx.fillRect(0,0,W(),H());
+  // ====== Animación ======
+  const clock = new THREE.Clock();
 
-    const sat = drawSaturn(t);
+  function animate(){
+    const dt = clock.getDelta();
+    const t = clock.elapsedTime;
 
-    // fondo gira alrededor de Saturno
-    drawBgStars(t, sat);
+    // todo rota alrededor de Saturno lentamente
+    bgStars.rotation.y = t * BG_ROT_SPEED;
 
-    // todo alrededor de Saturno (anillo): palabras + stickers + estrellitas
-    drawRingOrbit(t, sat);
+    // leve movimiento del planeta (vida)
+    planet.rotation.y = t * 0.12;
+    planet.rotation.x = Math.sin(t*0.3) * 0.02;
 
-    requestAnimationFrame(tick);
+    // el anillo vibra muy poquito
+    ring.rotation.z = Math.sin(t*0.2) * 0.02;
+
+    // elementos orbitando pegados al anillo
+    placeOrbitItems(t);
+
+    // tap burst
+    drawTapBurst(dt);
+
+    // vuelve opacidad a normal suavemente
+    torusMat.opacity += (0.45 - torusMat.opacity) * 0.04;
+    torusMat2.opacity += (0.55 - torusMat2.opacity) * 0.04;
+
+    renderer.render(scene, camera);
+    requestAnimationFrame(animate);
   }
-  requestAnimationFrame(tick);
-
-  addEventListener("resize", ()=>{ makeBgStars(); makeSparkles(); });
-
-})();
+  animate();
 </script>
 </body>
 </html>
