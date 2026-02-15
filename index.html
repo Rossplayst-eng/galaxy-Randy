@@ -2,314 +2,421 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Randy 💙</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Galaxia Para Mi Amor</title>
   <style>
-    html, body { height: 100%; margin: 0; background:#000; overflow:hidden; }
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
-    .frame{ position:fixed; inset:0; display:grid; place-items:center; background:#000; }
-    .stage{
-      width:min(100vw, calc(100vh * 9/16));
-      height:min(100vh, calc(100vw * 16/9));
+    :root{
+      --bg:#03040a;
+      --glow:#4cc9ff;
+      --glow2:#2aa8ff;
+      --ring:#7fe3ff;
+      --text:#eaf7ff;
+      --muted:rgba(234,247,255,.72);
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; margin:0; background:var(--bg); overflow:hidden; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+    #stage{ position:fixed; inset:0; }
+
+    /* Canvas fondo */
+    canvas{ position:absolute; inset:0; width:100%; height:100%; }
+
+    /* Capa de universo */
+    .universe{
+      position:absolute; inset:0;
+      display:grid; place-items:center;
+      pointer-events:none;
+    }
+
+    /* Saturno neón */
+    .saturn-wrap{
+      position:absolute;
+      width:min(42vmin, 520px);
+      aspect-ratio: 1/1;
+      display:grid;
+      place-items:center;
+      filter: drop-shadow(0 0 14px rgba(76,201,255,.35)) drop-shadow(0 0 40px rgba(42,168,255,.15));
+    }
+
+    .planet{
       position:relative;
-      overflow:hidden;
+      width:58%;
+      aspect-ratio: 1/1;
+      border-radius:50%;
+      background:
+        radial-gradient(65% 65% at 35% 30%, rgba(255,255,255,.15), rgba(255,255,255,0) 55%),
+        radial-gradient(110% 110% at 30% 20%, rgba(76,201,255,.65), rgba(10,18,40,.95) 60%),
+        radial-gradient(120% 120% at 50% 65%, rgba(42,168,255,.45), rgba(0,0,0,0) 70%);
+      box-shadow:
+        inset 0 0 28px rgba(255,255,255,.06),
+        0 0 18px rgba(76,201,255,.25),
+        0 0 55px rgba(42,168,255,.18);
+      outline: 1px solid rgba(127,227,255,.18);
+    }
+
+    .planet::after{
+      content:"";
+      position:absolute; inset:-14%;
+      border-radius:50%;
+      background: radial-gradient(circle, rgba(76,201,255,.18), rgba(76,201,255,0) 62%);
+      filter: blur(2px);
+      z-index:-1;
+    }
+
+    /* Anillo */
+    .ring{
+      position:absolute;
+      width:115%;
+      height:54%;
+      border-radius:50%;
+      transform: rotate(-18deg);
+      background:
+        radial-gradient(70% 120% at 50% 50%, rgba(127,227,255,.55), rgba(127,227,255,0) 62%),
+        linear-gradient(90deg, rgba(127,227,255,0), rgba(127,227,255,.55), rgba(127,227,255,0));
+      filter: blur(.2px);
+      opacity:.95;
+      box-shadow:
+        0 0 18px rgba(127,227,255,.22),
+        0 0 40px rgba(76,201,255,.12);
+      outline: 1px solid rgba(127,227,255,.12);
+    }
+
+    /* Parte delantera y trasera del anillo (para sensación 3D) */
+    .ring.back{
+      mask: radial-gradient(80% 80% at 50% 50%, transparent 45%, #000 46%);
+      opacity:.55;
+      filter: blur(.4px);
+    }
+    .ring.front{
+      mask: radial-gradient(80% 80% at 50% 50%, #000 45%, transparent 46%);
+      opacity:.95;
+    }
+
+    /* Texto en la parte de abajo */
+    .caption{
+      position:absolute;
+      bottom:4.2vmin;
+      left:50%;
+      transform:translateX(-50%);
+      text-align:center;
+      pointer-events:none;
+      padding:10px 16px;
       border-radius:18px;
-      background:#000;
+      background: rgba(2,4,10,.18);
+      backdrop-filter: blur(6px);
+      border:1px solid rgba(127,227,255,.10);
+      box-shadow: 0 0 40px rgba(42,168,255,.08);
     }
-    canvas{ position:absolute; inset:0; width:100%; height:100%; display:block; }
-    .title{
-      position:absolute; top:16px; left:50%; transform:translateX(-50%);
-      z-index:5; pointer-events:none; user-select:none;
-      color:#7ad7ff; font-weight:800; white-space:nowrap;
-      font-size: clamp(28px, 6vw, 52px);
-      text-shadow: 0 0 16px rgba(70,190,255,.95), 0 0 42px rgba(70,190,255,.35);
-      display:flex; gap:10px; align-items:center;
+    .caption h1{
+      margin:0;
+      font-size:clamp(14px, 2.2vmin, 20px);
+      letter-spacing:.18em;
+      text-transform:uppercase;
+      color:rgba(234,247,255,.92);
     }
-    .title span{ filter: drop-shadow(0 0 18px rgba(70,190,255,.95)); }
+    .caption p{
+      margin:8px 0 0 0;
+      font-size:clamp(12px, 1.8vmin, 16px);
+      color:var(--muted);
+    }
+
+    /* Frases orbitando */
+    .orbit-layer{
+      position:absolute;
+      width:min(88vmin, 980px);
+      aspect-ratio:1/1;
+      display:block;
+      pointer-events:none;
+    }
+    .phrase{
+      position:absolute;
+      left:50%;
+      top:50%;
+      transform:translate(-50%,-50%);
+      padding:8px 12px;
+      border-radius:999px;
+      background: rgba(3,6,16,.28);
+      border:1px solid rgba(127,227,255,.10);
+      color:rgba(234,247,255,.92);
+      font-size:clamp(12px, 1.9vmin, 17px);
+      white-space:nowrap;
+      box-shadow:
+        0 0 22px rgba(76,201,255,.09),
+        inset 0 0 14px rgba(127,227,255,.06);
+      text-shadow: 0 0 10px rgba(76,201,255,.25);
+      backdrop-filter: blur(8px);
+      opacity:.95;
+    }
+
+    /* Sticker opcional */
+    .sticker{
+      position:absolute;
+      left:50%;
+      top:50%;
+      width:clamp(42px, 7vmin, 90px);
+      height:clamp(42px, 7vmin, 90px);
+      transform:translate(-50%,-50%);
+      border-radius:18px;
+      border:1px solid rgba(127,227,255,.15);
+      background: rgba(3,6,16,.22);
+      box-shadow: 0 0 28px rgba(76,201,255,.12);
+      overflow:hidden;
+      display:grid; place-items:center;
+      opacity:.92;
+    }
+    .sticker img{
+      width:100%;
+      height:100%;
+      object-fit:contain;
+      display:block;
+      filter: drop-shadow(0 0 10px rgba(76,201,255,.20));
+    }
+    .hint{
+      position:absolute; inset:auto 2.8vmin 2.8vmin auto;
+      font-size:12px;
+      color:rgba(234,247,255,.55);
+      background: rgba(2,4,10,.22);
+      border:1px solid rgba(127,227,255,.08);
+      padding:8px 10px;
+      border-radius:12px;
+      backdrop-filter: blur(8px);
+      pointer-events:none;
+      max-width:min(360px, 82vw);
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      .hint::after{ content:" (animación reducida)"; }
+    }
   </style>
 </head>
-
 <body>
-  <div class="frame">
-    <div class="stage" id="stage">
-      <div class="title">Randy <span>💙</span></div>
-      <canvas id="c"></canvas>
+  <div id="stage">
+    <canvas id="stars"></canvas>
+
+    <div class="universe" aria-hidden="true">
+      <div class="orbit-layer" id="orbitLayer"></div>
+
+      <div class="saturn-wrap">
+        <div class="ring back"></div>
+        <div class="planet"></div>
+        <div class="ring front"></div>
+      </div>
+
+      <div class="caption">
+        <h1>PARA MI UNIVERSO</h1>
+        <p>Siempre rotando alrededor de ti ✨</p>
+      </div>
+
+      <div class="hint">
+        Tip: si tienes un sticker PNG/WebP, ponlo en la misma carpeta y cambia el nombre en el código
+        (<b>sticker.png</b>). Si no lo quieres, borra el bloque “sticker”.
+      </div>
     </div>
   </div>
 
-<script type="module">
-  import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
-  import { EffectComposer } from "https://unpkg.com/three@0.160.0/examples/jsm/postprocessing/EffectComposer.js";
-  import { RenderPass } from "https://unpkg.com/three@0.160.0/examples/jsm/postprocessing/RenderPass.js";
-  import { UnrealBloomPass } from "https://unpkg.com/three@0.160.0/examples/jsm/postprocessing/UnrealBloomPass.js";
+  <script>
+    // =========================
+    //  CONFIG (tú puedes editar)
+    // =========================
+    const phrases = [
+      "my desastre fav",
+      "mi niño",
+      "mi todo",
+      "mi mundo",
+      "mi cielo",
+      "mi husband",
+      "mi rey",
+      "el dueño de mi corazón",
+      "el color que hace mis días más hermosos",
+      "te amo",
+      "mi chiquito",
+      "hermoso",
+      "precioso",
+      "mi tesoro",
+      "lo más preciado para mí"
+    ];
 
-  // ====== CONFIG ======
-  const STICKER_PATH = "IMG_4079.png"; // <- tu sticker actual en el repo
-  const PHRASES = ["Te amo","Mi desastre fav","Mi todo","Mi mundo","Mi universo"];
+    // Velocidades (más bajo = más lento)
+    const ORBIT_SPEED = 0.035;      // frases
+    const STARS_SPEED = 0.010;      // estrellas
+    const TWINKLE_SPEED = 0.85;     // parpadeo suave
 
-  // Velocidades (lento pero visible)
-  const ORBIT_RPS = 1/20;     // 1 vuelta cada 20s (cambia a 1/30 si lo quieres más lento)
-  const BG_RPS    = 1/90;     // estrellas fondo (1 vuelta cada 90s)
+    // Radios de órbita para frases (se ajusta a pantalla)
+    const ORBIT_MIN = 180; // px
+    const ORBIT_MAX = 360; // px
 
-  // Cantidades
-  const WORD_COUNT    = 24;
-  const STICKER_COUNT = 14;
-  const SPARKLES      = 900;
+    // Sticker (opcional)
+    const STICKER_ENABLED = true;       // pon false si NO lo quieres
+    const STICKER_FILE = "sticker.png"; // cambia por el nombre real
 
-  // Colores
-  const BLUE = new THREE.Color("#46beff");
-  const BLUE_SOFT = new THREE.Color("#c9f3ff");
+    // =========================
+    //  ORBIT TEXT LAYER
+    // =========================
+    const orbitLayer = document.getElementById("orbitLayer");
 
-  // ====== Setup ======
-  const stage = document.getElementById("stage");
-  const canvas = document.getElementById("c");
-
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:false });
-  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
-  renderer.setClearColor(0x000000, 1);
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.25;
-
-  const scene = new THREE.Scene();
-
-  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 200);
-  camera.position.set(0, 2.7, 11.0);
-
-  // Luces
-  scene.add(new THREE.AmbientLight(0xffffff, 0.55));
-  const key = new THREE.DirectionalLight(0xffffff, 1.0);
-  key.position.set(3, 5, 6);
-  scene.add(key);
-
-  // Post: Bloom (brillo difuminado REAL)
-  const composer = new EffectComposer(renderer);
-  const renderPass = new RenderPass(scene, camera);
-  composer.addPass(renderPass);
-
-  const bloom = new UnrealBloomPass(new THREE.Vector2(1,1), 1.2, 0.55, 0.0);
-  // strength, radius, threshold
-  bloom.strength = 1.45;
-  bloom.radius = 0.55;
-  bloom.threshold = 0.0;
-  composer.addPass(bloom);
-
-  function resize(){
-    const w = stage.clientWidth;
-    const h = stage.clientHeight;
-    renderer.setSize(w, h, false);
-    composer.setSize(w, h);
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
-  }
-  addEventListener("resize", resize);
-  resize();
-
-  // Root (todo gira alrededor de Saturno)
-  const root = new THREE.Group();
-  scene.add(root);
-
-  // ====== Fondo de estrellas esparcidas (rotan) ======
-  const bg = new THREE.Group();
-  root.add(bg);
-
-  const bgGeo = new THREE.BufferGeometry();
-  const BG_COUNT = 2200;
-  const pos = new Float32Array(BG_COUNT * 3);
-  for(let i=0;i<BG_COUNT;i++){
-    const r = THREE.MathUtils.randFloat(28, 60);
-    const th = THREE.MathUtils.randFloat(0, Math.PI*2);
-    const u = THREE.MathUtils.randFloat(-1, 1);
-    const ph = Math.acos(u);
-    pos[i*3+0] = r * Math.sin(ph) * Math.cos(th);
-    pos[i*3+1] = r * Math.cos(ph) * 0.55;
-    pos[i*3+2] = r * Math.sin(ph) * Math.sin(th);
-  }
-  bgGeo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-  const bgMat = new THREE.PointsMaterial({ color:0xffffff, size:0.06, transparent:true, opacity:0.75, depthWrite:false });
-  bg.add(new THREE.Points(bgGeo, bgMat));
-
-  // ====== Saturno abajo ======
-  const saturn = new THREE.Group();
-  saturn.position.set(0, -1.55, 0);
-  root.add(saturn);
-
-  const planet = new THREE.Mesh(
-    new THREE.SphereGeometry(1.45, 64, 64),
-    new THREE.MeshStandardMaterial({
-      color: new THREE.Color("#0b2a3d"),
-      roughness: 0.45,
-      metalness: 0.08,
-      emissive: new THREE.Color("#08314a"),
-      emissiveIntensity: 0.75
-    })
-  );
-  saturn.add(planet);
-
-  // Glow del planeta
-  const glow = new THREE.Mesh(
-    new THREE.SphereGeometry(1.62, 48, 48),
-    new THREE.MeshBasicMaterial({
-      color: BLUE,
-      transparent:true,
-      opacity: 0.28,
-      blending: THREE.AdditiveBlending,
-      depthWrite:false
-    })
-  );
-  saturn.add(glow);
-
-  // ====== Anillo neón (torus) ======
-  const ring = new THREE.Group();
-  ring.rotation.x = THREE.MathUtils.degToRad(68);
-  saturn.add(ring);
-
-  const R = 2.85;
-  ring.add(new THREE.Mesh(
-    new THREE.TorusGeometry(R, 0.10, 16, 260),
-    new THREE.MeshBasicMaterial({ color: BLUE, transparent:true, opacity:0.70, blending: THREE.AdditiveBlending, depthWrite:false })
-  ));
-  ring.add(new THREE.Mesh(
-    new THREE.TorusGeometry(R, 0.04, 12, 260),
-    new THREE.MeshBasicMaterial({ color: BLUE_SOFT, transparent:true, opacity:0.85, blending: THREE.AdditiveBlending, depthWrite:false })
-  ));
-
-  // ====== Orbit group: “cosas fijas” en el anillo ======
-  // IMPORTANTE: aquí NO re-posicionamos cada frame, solo rotamos el grupo => se ven “fijas” en el círculo
-  const orbit = new THREE.Group();
-  ring.add(orbit);
-
-  // ---- Text sprites (gordito relleno + borde) ----
-  function makeTextTexture(text){
-    const c = document.createElement("canvas");
-    const ctx = c.getContext("2d");
-    c.width = 900; c.height = 220;
-
-    ctx.clearRect(0,0,c.width,c.height);
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-
-    // gordito
-    ctx.font = "900 120px system-ui, -apple-system, Segoe UI, Roboto, Arial";
-
-    // glow
-    ctx.shadowColor = "rgba(70,190,255,0.95)";
-    ctx.shadowBlur = 30;
-
-    // fill
-    ctx.fillStyle = "rgba(195,248,255,0.98)";
-    ctx.fillText(text, c.width/2, c.height/2);
-
-    // stroke
-    ctx.shadowBlur = 0;
-    ctx.lineWidth = 14;
-    ctx.strokeStyle = "rgba(240,252,255,0.95)";
-    ctx.strokeText(text, c.width/2, c.height/2);
-
-    const tex = new THREE.CanvasTexture(c);
-    tex.minFilter = THREE.LinearFilter;
-    tex.magFilter = THREE.LinearFilter;
-    return tex;
-  }
-
-  function makeTextSprite(text){
-    const mat = new THREE.SpriteMaterial({
-      map: makeTextTexture(text),
-      transparent:true,
-      depthWrite:false,
-      blending: THREE.AdditiveBlending
+    const phraseNodes = phrases.map((t, i) => {
+      const el = document.createElement("div");
+      el.className = "phrase";
+      el.textContent = t;
+      orbitLayer.appendChild(el);
+      return el;
     });
-    const sp = new THREE.Sprite(mat);
-    sp.scale.set(1.35, 0.40, 1);
-    return sp;
-  }
 
-  // Colocamos palabras una vez alrededor del círculo
-  const words = [];
-  for(let i=0;i<WORD_COUNT;i++){
-    const sp = makeTextSprite(PHRASES[i % PHRASES.length]);
-    const a = (i/WORD_COUNT) * Math.PI*2;
-    sp.position.set(Math.cos(a)*R*1.06, 0.22, Math.sin(a)*R*1.06);
-    orbit.add(sp);
-    words.push(sp);
-  }
-
-  // ---- Sticker sprite ----
-  const loader = new THREE.TextureLoader();
-  const stickerTex = await new Promise(resolve => {
-    loader.load(STICKER_PATH, t => { t.colorSpace = THREE.SRGBColorSpace; resolve(t); }, undefined, () => resolve(null));
-  });
-
-  function makeStickerSprite(){
-    if(!stickerTex){
-      const sp = makeTextSprite("💙");
-      sp.scale.set(0.7, 0.7, 1);
-      return sp;
+    let stickerNode = null;
+    if (STICKER_ENABLED) {
+      stickerNode = document.createElement("div");
+      stickerNode.className = "sticker";
+      stickerNode.innerHTML = `<img src="${STICKER_FILE}" alt="" />`;
+      orbitLayer.appendChild(stickerNode);
     }
-    const mat = new THREE.SpriteMaterial({ map: stickerTex, transparent:true, depthWrite:false });
-    const sp = new THREE.Sprite(mat);
-    sp.scale.set(0.82, 0.82, 1);
-    return sp;
-  }
 
-  const stickers = [];
-  for(let i=0;i<STICKER_COUNT;i++){
-    const sp = makeStickerSprite();
-    const a = (i/STICKER_COUNT) * Math.PI*2;
-    const lane = 0.90 + 0.14*Math.sin(i*9.13);
-    sp.position.set(Math.cos(a)*R*lane, -0.16, Math.sin(a)*R*lane);
-    orbit.add(sp);
-    stickers.push(sp);
-  }
+    // =========================
+    //  STAR CANVAS (particles)
+    // =========================
+    const canvas = document.getElementById("stars");
+    const ctx = canvas.getContext("2d", { alpha: true });
 
-  // ---- Sparkles (puntos) ----
-  const spGeo = new THREE.BufferGeometry();
-  const spPos = new Float32Array(SPARKLES*3);
-  const spSeed = new Float32Array(SPARKLES);
-  for(let i=0;i<SPARKLES;i++){
-    spSeed[i] = Math.random();
-    const a = spSeed[i] * Math.PI*2;
-    const lane = 0.90 + 0.26*Math.sin(spSeed[i]*50.0);
-    spPos[i*3+0] = Math.cos(a)*R*lane;
-    spPos[i*3+1] = (Math.sin(spSeed[i]*100.0)*0.06);
-    spPos[i*3+2] = Math.sin(a)*R*lane;
-  }
-  spGeo.setAttribute("position", new THREE.BufferAttribute(spPos,3));
-  spGeo.setAttribute("seed", new THREE.BufferAttribute(spSeed,1));
+    let W = 0, H = 0, DPR = 1;
+    let center = { x: 0, y: 0 };
 
-  const spMat = new THREE.PointsMaterial({
-    color: 0xffffff,
-    size: 0.065,
-    transparent:true,
-    opacity: 0.95,
-    depthWrite:false,
-    blending: THREE.AdditiveBlending
-  });
-  const sparklePts = new THREE.Points(spGeo, spMat);
-  orbit.add(sparklePts);
+    const starCount = 380;   // cantidad total
+    const stars = [];
 
-  // ====== Animación ======
-  const clock = new THREE.Clock();
+    function rand(a,b){ return a + Math.random()*(b-a); }
 
-  function animate(){
-    const t = clock.getElapsedTime();
+    function resize(){
+      DPR = Math.min(2, window.devicePixelRatio || 1);
+      W = Math.floor(window.innerWidth);
+      H = Math.floor(window.innerHeight);
+      canvas.width = Math.floor(W * DPR);
+      canvas.height = Math.floor(H * DPR);
+      canvas.style.width = W + "px";
+      canvas.style.height = H + "px";
+      ctx.setTransform(DPR,0,0,DPR,0,0);
 
-    // estrellas fondo rotan suave
-    bg.rotation.y = t * (Math.PI*2*BG_RPS);
+      center.x = W/2;
+      center.y = H/2;
 
-    // planeta vive
-    planet.rotation.y = t * 0.12;
-    ring.rotation.z = Math.sin(t*0.2) * 0.02;
+      // (Re)crear estrellas
+      stars.length = 0;
+      const maxR = Math.hypot(W, H) * 0.55;
+      for(let i=0;i<starCount;i++){
+        const r = rand(40, maxR);
+        const a = rand(0, Math.PI*2);
+        stars.push({
+          baseR: r,
+          ang: a,
+          size: rand(0.6, 1.8),
+          alpha: rand(0.15, 0.85),
+          tw: rand(0, Math.PI*2),
+          layer: rand(0.25, 1.0) // parallax/velocidad relativa
+        });
+      }
+    }
 
-    // Lo CLAVE: orbit rota => palabras “fijas” en el círculo, girando lento alrededor
-    orbit.rotation.y = t * (Math.PI*2*ORBIT_RPS);
+    window.addEventListener("resize", resize, { passive:true });
+    resize();
 
-    // Sparkles “parpadean” un poco
-    sparklePts.material.opacity = 0.80 + 0.18*Math.sin(t*2.2);
+    function drawBackground(){
+      // fondo con gradiente sutil (no saturado)
+      const g = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, Math.max(W,H)*0.7);
+      g.addColorStop(0, "rgba(20, 45, 95, 0.18)");
+      g.addColorStop(0.45, "rgba(6, 10, 25, 0.55)");
+      g.addColorStop(1, "rgba(0, 0, 0, 1)");
+      ctx.fillStyle = g;
+      ctx.fillRect(0,0,W,H);
+    }
 
-    composer.render();
-    requestAnimationFrame(animate);
-  }
-  animate();
-</script>
+    function drawStars(t){
+      ctx.save();
+      // estrellas
+      for(const s of stars){
+        const a = s.ang;
+        const r = s.baseR;
+
+        const x = center.x + Math.cos(a) * r;
+        const y = center.y + Math.sin(a) * r;
+
+        const twinkle = 0.65 + 0.35 * Math.sin(s.tw + t*TWINKLE_SPEED);
+        const al = Math.max(0, Math.min(1, s.alpha * twinkle));
+
+        ctx.fillStyle = `rgba(234,247,255,${al})`;
+        ctx.beginPath();
+        ctx.arc(x, y, s.size, 0, Math.PI*2);
+        ctx.fill();
+
+        // glow mini para algunas
+        if (s.size > 1.3) {
+          ctx.fillStyle = `rgba(76,201,255,${al*0.12})`;
+          ctx.beginPath();
+          ctx.arc(x, y, s.size*3.2, 0, Math.PI*2);
+          ctx.fill();
+        }
+      }
+      ctx.restore();
+    }
+
+    // =========================
+    //  ANIM LOOP
+    // =========================
+    let last = performance.now();
+    let time = 0;
+
+    function tick(now){
+      const dt = Math.min(0.05, (now - last) / 1000);
+      last = now;
+      time += dt;
+
+      // mover estrellas (rotación suave)
+      for(const s of stars){
+        s.ang += dt * STARS_SPEED * (0.35 + s.layer);
+        s.tw += dt * (0.25 + s.layer*0.6);
+      }
+
+      // dibujar
+      ctx.clearRect(0,0,W,H);
+      drawBackground();
+      drawStars(time);
+
+      // órbitas de texto
+      const minSide = Math.min(W,H);
+      const rMin = Math.max(ORBIT_MIN, minSide * 0.22);
+      const rMax = Math.max(ORBIT_MAX, minSide * 0.38);
+
+      const count = phraseNodes.length;
+      for(let i=0;i<count;i++){
+        const el = phraseNodes[i];
+
+        // distribuir en 2 anillos para que no se amontonen
+        const ring = (i % 2);
+        const radius = ring ? rMax : rMin;
+
+        const base = (i / count) * Math.PI*2;
+        const ang = base + time * ORBIT_SPEED * (ring ? 0.9 : 1.0);
+
+        const x = Math.cos(ang) * radius;
+        const y = Math.sin(ang) * radius;
+
+        // leve perspectiva/opacity
+        const depth = 0.6 + 0.4 * (Math.sin(ang) * 0.5 + 0.5);
+
+        el.style.transform =
+          `translate(-50%,-50%) translate(${x}px, ${y}px)`;
+        el.style.opacity = (0.70 + 0.25*depth).toFixed(3);
+      }
+
+      // sticker orbitando (si existe)
+      if (stickerNode){
+        const r = (rMin + rMax) * 0.52;
+        const a = time * (ORBIT_SPEED * 0.85) + 1.2;
+        const x = Math.cos(a) * r;
+        const y = Math.sin(a) * r;
+        stickerNode.style.transform = `translate(-50%,-50%) translate(${x}px, ${y}px) rotate(${a*18}deg)`;
+      }
+
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  </script>
 </body>
 </html>
